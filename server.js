@@ -1,9 +1,20 @@
 const http = require('http');
 const url = require('url');
 
+function getMillisecondsFromBigInt(start, end) {
+  // Convert nanoseconds to milliseconds by dividing by 1,000,000
+  const elapsedNanoseconds = end - start;
+  const elapsedMilliseconds = Number(elapsedNanoseconds) / 1e6;
+  return elapsedMilliseconds;
+}
+
 // Function to get the current timestamp
-function getTimestamp() {
-    return new Date().toISOString();
+function getTimestamp(startTime) {
+  now = process.hrtime.bigint(); 
+  if (startTime){
+    return `${now} sincestart: ${getMillisecondsFromBigInt(startTime, now)}ms`
+  }
+  return now;
 }
 
 
@@ -30,51 +41,52 @@ function generateString(sizeInKB) {
 
 // Create an HTTP server
 const server = http.createServer((req, res) => {
-    console.log (`-----------------> new request ${getTimestamp()}`)
+   const startTime = getTimestamp()
+    console.log (`-----------------> new request ${startTime}`)
     const parsedUrl = url.parse(req.url, true);
 
     // Get the underlying socket
     const socket = req.socket;
 
     // Log when the client connects
-    console.log(`[${getTimestamp()}] Client connected`);
+    console.log(`[${getTimestamp(startTime)}] Client connected`);
 
     // Log socket events
     socket.on('data', (chunk) => {
-        console.log(`[${getTimestamp()}] Socket received data: ${chunk}`);
+        console.log(`[${getTimestamp(startTime)}] Socket received data: ${chunk}`);
     });
 
     socket.on('end', () => {
-        console.log(`[${getTimestamp()}] Socket end event`);
+        console.log(`[${getTimestamp(startTime)}] Socket end event`);
     });
 
     socket.on('timeout', () => {
-        console.log(`[${getTimestamp()}] Socket timeout`);
+        console.log(`[${getTimestamp(startTime)}] Socket timeout`);
     });
 
     socket.on('error', (err) => {
-        console.log(`[${getTimestamp()}] Socket error: ${err.message}`);
+        console.log(`[${getTimestamp(startTime)}] Socket error: ${err.message}`);
     });
 
     socket.on('close', (hadError) => {
-        console.log(`[${getTimestamp()}] Socket close event, hadError=${hadError}`);
+        console.log(`[${getTimestamp(startTime)}] Socket close event, hadError=${hadError}`);
     });
 
     // Handle REST endpoint
     
-        console.log(`[${getTimestamp()}] Received request path: ${parsedUrl.pathname} method: ${req.method} headers: ${JSON.stringify(req.headers)}`);
+        console.log(`[${getTimestamp(startTime)}] Received request path: ${parsedUrl.pathname} method: ${req.method} headers: ${JSON.stringify(req.headers)}`);
         res.writeHead(200, {'Content-Type': 'application/json'});
-        res.end(JSON.stringify({ message: 'This is a REST endpoint for timestamps', data: generateString(2000) }));
+        res.end(JSON.stringify({ message: 'This is a REST endpoint for timestamps', data: generateString(1000) }));
     
 
     // Log when data is sent (in this case, after the response ends)
     res.on('finish', () => {
-        console.log(`[${getTimestamp()}] Response sent to client`);
+        console.log(`[${getTimestamp(startTime)}] Response sent to client`);
     });
 
     // Log when the request is closed
     req.on('close', () => {
-        console.log(`[${getTimestamp()}] Request closed`);
+        console.log(`[${getTimestamp(startTime)}] Request closed`);
     });
 });
 
